@@ -1,0 +1,439 @@
+Bangun aplikasi web “Sistem Manajemen Apotek dan Kasir” untuk apotek di Indonesia. Aplikasi harus berfungsi dari pengadaan obat, penerimaan, penyimpanan, pelayanan resep, penjualan kasir, sampai pelaporan dan audit.
+
+Jangan hanya membuat tampilan atau dashboard dengan data contoh. Implementasikan database, backend, frontend, autentikasi, hak akses, transaksi stok, dan proses bisnis yang benar-benar terhubung.
+
+1. TUJUAN DAN BATASAN
+
+Tujuan sistem:
+- Mengelola obat dan produk apotek secara tertib.
+- Menelusuri setiap pergerakan stok berdasarkan produk, batch, kedaluwarsa, lokasi, dan dokumen sumber.
+- Mempercepat pelayanan resep dan transaksi kasir.
+- Mendukung pengawasan oleh apoteker penanggung jawab.
+- Menyediakan bukti pencatatan dan laporan untuk pemeriksaan.
+
+Gunakan regulasi resmi yang berlaku pada saat implementasi, termasuk:
+- Peraturan BPOM Nomor 5 Tahun 2026 tentang Pengawasan Pengelolaan Obat dan Bahan Obat di Fasilitas Pelayanan Kefarmasian dan Fasilitas Lain.
+- Permenkes Nomor 73 Tahun 2016 tentang Standar Pelayanan Kefarmasian di Apotek.
+- Ketentuan terkait narkotika, psikotropika, prekursor farmasi, obat-obat tertentu, pelindungan data pribadi, serta pelaporan yang relevan.
+
+Verifikasi perubahan, pencabutan, dan ketentuan pelaksana dari sumber resmi. Jangan menggunakan Peraturan BPOM Nomor 24 Tahun 2021 sebagai dasar yang masih berlaku.
+
+Buat matriks regulasi berisi sumber, pasal/lampiran, kebutuhan proses, fitur pendukung, bukti yang disimpan, dan status verifikasi. Bedakan:
+- Kewajiban regulasi yang telah diverifikasi.
+- SOP apotek.
+- Fitur tambahan untuk efisiensi.
+
+Jangan menyatakan aplikasi otomatis menjamin kepatuhan. Jangan mengarang nomor pasal, masa retensi, format laporan resmi, atau integrasi pemerintah.
+
+2. TEKNOLOGI
+
+Jika belum ada proyek, gunakan:
+- Backend: Laravel versi stabil yang masih didukung.
+- Frontend: Vue 3, Inertia, dan Tailwind CSS.
+- Database: PostgreSQL.
+- Antrean pekerjaan untuk laporan dan pencadangan.
+- Docker Compose untuk pengembangan.
+- Penyimpanan privat untuk resep dan dokumen.
+
+Jika proyek sudah memiliki stack, pertahankan stack tersebut jika mampu memenuhi kebutuhan.
+
+Gunakan antarmuka Bahasa Indonesia, mata uang rupiah, dan zona waktu yang dapat diatur, dengan default Asia/Makassar. Simpan waktu secara konsisten dan tampilkan sesuai zona waktu apotek.
+
+Rancang satu apotek terlebih dahulu dengan beberapa lokasi penyimpanan. Dukungan multi cabang dapat dikembangkan kemudian.
+
+3. PENGGUNA DAN HAK AKSES
+
+Sediakan peran:
+- Pemilik: ringkasan usaha, laporan keuangan, pengaturan bisnis.
+- Administrator: pengguna, konfigurasi, dan data master.
+- Apoteker penanggung jawab: validasi resep, persetujuan tindakan kefarmasian, pengawasan, dan laporan.
+- Apoteker pendamping: pelayanan kefarmasian sesuai kewenangan.
+- Tenaga teknis kefarmasian: penerimaan, stok, dan pelayanan sesuai kewenangan.
+- Petugas pembelian/gudang: pemasok, pesanan, penerimaan, dan inventaris.
+- Kasir: transaksi dan shift.
+- Auditor: akses baca sesuai ruang lingkup.
+
+Hak akses harus ditegakkan di backend, bukan hanya menyembunyikan menu.
+
+Hak administrator teknis tidak otomatis memberikan kewenangan apoteker. Persetujuan kefarmasian harus dilakukan pengguna dengan kewenangan yang sesuai.
+
+Atur izin terpisah untuk melihat harga modal, mengubah harga, diskon, pembatalan, refund, ekspor data pasien, koreksi stok, dan transaksi obat dengan pengawasan khusus.
+
+4. DATA MASTER
+
+Data apotek:
+- Nama, alamat, kontak, logo, dan identitas perizinan yang relevan.
+- Identitas apoteker dan masa berlaku dokumen kewenangan.
+- Pengaturan nomor dokumen, printer, pajak, dan zona waktu.
+
+Data produk:
+- SKU dan barcode.
+- Nama dagang, nama generik/zat aktif, kekuatan, bentuk sediaan.
+- Produsen dan nomor izin edar jika relevan.
+- Golongan obat dan penanda pengawasan khusus.
+- Kebutuhan resep serta aturan penyerahan yang telah diverifikasi.
+- Satuan dasar, satuan pembelian, satuan penjualan, dan konversinya.
+- Lokasi dan persyaratan penyimpanan.
+- Stok minimum, titik pemesanan ulang, harga jual, dan status aktif.
+
+Contoh konversi: 1 dus = 10 strip, 1 strip = 10 tablet. Konversi harus dikonfigurasi per produk, tidak diasumsikan sama.
+
+Pisahkan master produk dari batch dan penerimaan. Nomor batch, kedaluwarsa, pemasok, dan harga perolehan dicatat pada persediaan terkait.
+
+Kategori produk nonobat seperti alat kesehatan dan suplemen harus memiliki aturan data yang sesuai kategorinya.
+
+Data pemasok:
+- Nama, alamat, kontak, identitas dan dokumen perizinan yang relevan.
+- Jenis pemasok dan ruang lingkup produk yang dapat dipasok.
+- Termin pembayaran dan rekening.
+- Masa berlaku dokumen serta status verifikasi.
+
+5. PENGADAAN DAN PENERIMAAN
+
+Alur:
+Usulan kebutuhan → pesanan/surat pesanan → persetujuan → penerimaan → verifikasi → posting stok → utang/pembayaran.
+
+Sediakan:
+- Usulan pembelian berdasarkan stok minimum dan riwayat penjualan.
+- Purchase order dan surat pesanan.
+- Alur serta format dokumen khusus sesuai kategori obat dan aturan terverifikasi.
+- Penerimaan sebagian dan beberapa penerimaan untuk satu pesanan.
+- Nomor faktur, tanggal, pemasok, produk, satuan, jumlah, diskon, pajak, ongkir, dan biaya perolehan.
+- Nomor batch dan kedaluwarsa setiap item penerimaan.
+- Checklist kondisi kemasan, kesesuaian dokumen, jumlah, dan persyaratan suhu bila relevan.
+- Lampiran faktur dan dokumen pendukung.
+- Penanganan selisih, barang ditolak, atau barang dikarantina.
+- Riwayat petugas penerima dan verifikator.
+
+Barang belum diverifikasi atau masih dikarantina tidak boleh tersedia untuk penjualan.
+
+Pisahkan penerimaan stok dari pembayaran pemasok.
+
+6. PERSEDIAAN DAN KARTU STOK
+
+Bangun ledger stok sebagai sumber seluruh mutasi:
+- Saldo awal.
+- Penerimaan pembelian.
+- Penyerahan/penjualan.
+- Pemakaian bahan racikan.
+- Transfer lokasi.
+- Retur pemasok.
+- Retur pelanggan yang telah dinilai kelayakannya.
+- Koreksi hasil stok opname.
+- Karantina, pelepasan karantina, dan pemusnahan.
+
+Setiap mutasi menyimpan:
+- Produk, batch/penerimaan, kedaluwarsa, lokasi.
+- Jumlah masuk/keluar dalam satuan dasar.
+- Dokumen sumber.
+- Waktu, pengguna, alasan, dan persetujuan bila diperlukan.
+
+Ketentuan:
+- Tidak boleh ada stok negatif.
+- Stok tersedia memperhitungkan reservasi.
+- Stok karantina, rusak, kedaluwarsa, ditarik, atau menunggu pemusnahan tidak dapat dijual.
+- Gunakan FEFO untuk alokasi batch yang memenuhi syarat.
+- Penggantian batch dari rekomendasi FEFO membutuhkan alasan dan izin.
+- Penjualan dapat mengambil beberapa batch jika diperlukan.
+- Riwayat kartu stok dapat ditelusuri ke dokumen asal.
+
+Gunakan transaksi database dan penguncian yang tepat agar dua kasir tidak menjual stok terakhir secara bersamaan.
+
+Sediakan peringatan kedaluwarsa yang dapat diatur, misalnya 180, 90, dan 30 hari. Angka ini merupakan pengaturan operasional, bukan otomatis batas regulasi.
+
+7. PENYIMPANAN DAN SUHU
+
+Sediakan:
+- Master rak, gudang, lemari, kulkas, dan area karantina.
+- Penempatan produk dan batch.
+- Catatan suhu sesuai lokasi, jadwal, dan rentang yang ditentukan berdasarkan persyaratan produk/SOP.
+- Pencatatan penyimpangan suhu, tindakan koreksi, dan penilaian kelayakan.
+- Lampiran bukti dan identitas petugas.
+- Pengingat pencatatan suhu yang belum dilakukan.
+
+Jangan menggunakan satu rentang suhu untuk semua produk.
+
+8. STOK OPNAME
+
+Sediakan:
+- Opname seluruh stok atau lokasi/produk tertentu.
+- Snapshot saldo sistem dan pencatatan hitungan fisik.
+- Penghitungan per batch dan kedaluwarsa.
+- Mode hitung tanpa memperlihatkan saldo sistem.
+- Catatan transaksi yang terjadi selama opname atau pembatasan transaksi sesuai SOP.
+- Pemeriksaan ulang untuk selisih.
+- Persetujuan koreksi dengan alasan dan lampiran.
+
+Selisih tidak boleh langsung menimpa stok. Posting koreksi sebagai mutasi yang dapat diaudit.
+
+9. RESEP DAN PELAYANAN KEFARMASIAN
+
+Simpan data minimum yang relevan:
+- Nomor dan tanggal resep.
+- Identitas pasien, usia/tanggal lahir, dan kontak jika diperlukan.
+- Dokter dan informasi kewenangan yang relevan.
+- Berkas resep privat.
+- Item, jumlah, dosis, aturan pakai, dan catatan.
+- Riwayat penyerahan penuh/sebagian.
+- Petugas penelaah, peracik, pemeriksa, dan penyerah.
+
+Alur:
+Resep diterima → telaah apoteker → klarifikasi jika diperlukan → penyiapan/peracikan → pemeriksaan → penyerahan dan pencatatan informasi obat.
+
+Sediakan pencatatan:
+- Telaah administratif, farmasetik, dan klinis.
+- Alergi serta masalah terkait obat.
+- Klarifikasi kepada dokter.
+- Substitusi sesuai kewenangan dan aturan.
+- Konseling/informasi obat.
+- Alasan penolakan atau penundaan pelayanan.
+- Etiket dan salinan resep sesuai ketentuan terverifikasi.
+
+Pembayaran dan penyerahan obat harus memiliki status terpisah. Pembayaran tidak otomatis berarti obat sudah diserahkan.
+
+Jangan membangun keputusan klinis otomatis atau pemeriksa interaksi tanpa sumber data yang tervalidasi. Jika tersedia, jadikan bantuan bagi apoteker dan tampilkan sumber serta versinya.
+
+10. RACIKAN
+
+Sediakan:
+- Resep racikan dengan komponen dan jumlah bahan.
+- Satuan serta konversi presisi.
+- Alokasi batch setiap bahan.
+- Biaya bahan, kemasan, dan jasa racik.
+- Catatan proses, petugas, pemeriksa, dan etiket.
+- Pencatatan sisa/kehilangan bahan dengan alasan.
+- Batas penggunaan racikan sesuai penilaian apoteker dan referensi yang digunakan.
+
+Stok bahan berkurang ketika pemakaian diposting. Jangan mengurangi stok bahan dua kali saat racikan juga masuk ke transaksi kasir.
+
+11. OBAT DENGAN PENGAWASAN KHUSUS
+
+Sediakan aturan terpisah untuk narkotika, psikotropika, prekursor farmasi, dan obat-obat tertentu sesuai regulasi yang telah diverifikasi.
+
+Fitur:
+- Penandaan kategori dan pembatasan akses.
+- Dokumen pengadaan yang relevan.
+- Pemeriksaan syarat penyerahan.
+- Pencatatan resep, penerima, jumlah, batch, dan petugas sesuai kebutuhan.
+- Buku/kartu stok serta rekap terpisah.
+- Persetujuan sesuai kewenangan.
+- Penanganan selisih, kehilangan, dan kejadian khusus.
+- Rekap pelaporan dengan periode dan format yang dapat diperbarui.
+
+Integrasi SIPNAP atau layanan resmi lain hanya dibuat jika dokumentasi, akses, dan izin tersedia. Jika belum tersedia, buat ekspor dan daftar kerja untuk pelaporan manual. Jangan menampilkan status “terkirim” tanpa bukti pengiriman.
+
+12. KASIR / POINT OF SALE
+
+Buat halaman kasir desktop yang cepat:
+- Pencarian nama/SKU/zat aktif dan pemindai barcode.
+- Pemilihan satuan, jumlah, dan harga.
+- Informasi stok tersedia dan peringatan produk.
+- Keranjang dengan subtotal, diskon, pajak jika berlaku, pembulatan, dan total.
+- Transaksi produk nonobat, swamedikasi, dan transaksi terkait resep.
+- Hold/resume transaksi dengan masa reservasi yang jelas.
+- Catatan transaksi.
+- Pembatasan diskon dan perubahan harga berdasarkan izin.
+- Identitas kasir dan shift.
+- Cetak struk thermal 58/80 mm serta cetak ulang berlabel salinan.
+
+Barcode produk tidak dianggap otomatis menentukan batch. Sistem harus tetap mengalokasikan batch yang benar.
+
+Untuk item dengan syarat pelayanan tertentu, blok penyelesaian penyerahan sampai persyaratan dan persetujuan terpenuhi. Kasir tidak dapat melewati aturan tersebut hanya dengan memberi diskon atau mengubah jenis transaksi.
+
+Metode pembayaran:
+- Tunai dan kembalian.
+- Transfer.
+- Kartu.
+- QRIS.
+- Pembayaran gabungan.
+- Piutang pelanggan jika diaktifkan dan diizinkan.
+
+Pisahkan pencatatan pembayaran manual dari integrasi payment gateway. QRIS manual memerlukan verifikasi; integrasi gateway memakai status pembayaran dan webhook yang tervalidasi.
+
+Sediakan status transaksi:
+Draft → menunggu persyaratan/pembayaran → siap diserahkan → selesai, dengan status pembayaran dan penyerahan yang disimpan terpisah.
+
+Gunakan idempotency key agar klik berulang, retry, atau webhook berulang tidak membuat pembayaran dan pengurangan stok ganda.
+
+Transaksi selesai tidak boleh diedit langsung. Koreksi melalui pembatalan, refund, atau dokumen pembalik yang dapat diaudit.
+
+13. SHIFT KASIR
+
+Sediakan:
+- Buka shift dan modal awal.
+- Kas masuk/keluar dengan alasan.
+- Rekap pembayaran per metode.
+- Penutupan shift dan hitungan kas fisik.
+- Perbandingan kas seharusnya dengan kas fisik.
+- Selisih dan penjelasan.
+- Persetujuan supervisor.
+- Riwayat shift serta kasir.
+
+Pendapatan transfer/QRIS/kartu tidak dihitung sebagai uang tunai di laci.
+
+14. RETUR, REFUND, PENARIKAN, DAN PEMUSNAHAN
+
+Retur pelanggan:
+- Harus merujuk transaksi asal.
+- Jumlah tidak melebihi jumlah yang telah dijual dikurangi retur sebelumnya.
+- Catat alasan, kondisi, dan persetujuan.
+- Refund dan keputusan kelayakan stok merupakan dua proses terpisah.
+- Obat yang kembali tidak otomatis masuk stok layak jual; lakukan karantina dan penilaian sesuai SOP/ketentuan.
+
+Retur pemasok:
+- Merujuk penerimaan asal dan batch.
+- Catat jumlah, alasan, dokumen, serta nota kredit/pengembalian uang.
+
+Penarikan produk:
+- Cari produk/batch terdampak.
+- Blok penjualan dan karantina.
+- Telusuri pemasok serta transaksi penyerahan dengan akses terbatas.
+- Simpan pemberitahuan, tindak lanjut, dan bukti.
+
+Pemusnahan:
+- Daftar item dan batch.
+- Jumlah, alasan, persetujuan.
+- Tanggal, pihak/saksi sesuai ketentuan terverifikasi.
+- Berita acara dan lampiran.
+- Posting pengurangan stok ketika pemusnahan benar-benar dilaksanakan.
+
+15. HARGA, UTANG, DAN KEUANGAN
+
+Sediakan:
+- Harga jual per satuan dan riwayat perubahan.
+- Perhitungan biaya perolehan.
+- Margin dan batas diskon.
+- Utang pemasok, jatuh tempo, pembayaran sebagian.
+- Piutang pelanggan jika diaktifkan.
+- Beban operasional, kas, bank, dan rekonsiliasi.
+- Penjualan bersih, HPP, laba kotor, dan ringkasan laba rugi.
+
+FEFO mengatur pengeluaran fisik, sedangkan metode penilaian persediaan ditetapkan terpisah dan digunakan konsisten.
+
+Jangan menyebut omzet sebagai laba atau laba kotor sebagai laba bersih. Gunakan tipe decimal untuk uang dan kuantitas, bukan floating point.
+
+Pajak harus dapat dikonfigurasi berdasarkan status usaha dan ketentuan yang berlaku. Jangan menganggap semua apotek wajib menerapkan pajak yang sama.
+
+16. DASHBOARD DAN LAPORAN
+
+Dashboard:
+- Penjualan dan penerimaan pembayaran.
+- Laba kotor.
+- Stok minimum/habis.
+- Mendekati kedaluwarsa.
+- Stok karantina dan penarikan.
+- Utang jatuh tempo.
+- Resep/persetujuan tertunda.
+- Penyimpangan suhu dan selisih opname.
+
+Laporan:
+- Penjualan per periode, produk, kasir, dan metode pembayaran.
+- Pembelian serta penerimaan.
+- Kartu stok dan posisi stok historis.
+- Persediaan per batch/lokasi.
+- Kedaluwarsa.
+- Resep, penyerahan, dan racikan sesuai hak akses.
+- Pengawasan khusus.
+- Opname dan koreksi.
+- Retur/refund.
+- Penarikan dan pemusnahan.
+- Utang/piutang.
+- Shift dan selisih kas.
+- Margin/HPP.
+- Audit aktivitas.
+
+Semua laporan memiliki filter, total yang konsisten, ekspor sesuai izin, dan detail untuk menelusuri transaksi asal. Data pasien tidak boleh muncul pada laporan umum tanpa kebutuhan yang sah.
+
+17. KEAMANAN DAN AUDIT
+
+Implementasikan:
+- Autentikasi aman, hash password, pembatasan percobaan login, dan sesi kedaluwarsa.
+- Opsi autentikasi dua faktor untuk pengguna berwenang.
+- HTTPS pada produksi.
+- Validasi backend, CSRF sesuai arsitektur, dan perlindungan injeksi.
+- Berkas privat dengan pemeriksaan jenis, ukuran, dan akses.
+- Pemisahan rahasia dari kode sumber.
+- Pembatasan serta pencatatan ekspor data sensitif.
+- Backup terenkripsi dan prosedur pemulihan yang diuji.
+
+Audit mencatat siapa, kapan, tindakan, data sebelum/sesudah yang relevan, alasan, dan dokumen sumber. Jangan memasukkan password atau token ke log.
+
+Transaksi yang telah diposting tidak dapat dihapus permanen oleh pengguna biasa. Data sensitif dalam audit dibatasi agar tidak menyalin informasi pasien berlebihan.
+
+Kebijakan retensi, arsip, dan penghapusan harus dipetakan ke aturan yang terverifikasi. Jangan menetapkan masa retensi secara sembarang.
+
+18. DATABASE
+
+Rancang minimal entitas:
+- Apotek, pengguna, peran, izin, kredensial tenaga kefarmasian.
+- Produk, satuan produk, barcode, kategori, aturan pelayanan.
+- Pemasok dan dokumen.
+- Pesanan, item pesanan, penerimaan, item penerimaan.
+- Batch, lapisan persediaan, lokasi, ledger stok, reservasi.
+- Pasien, dokter, resep, item resep, telaah, penyerahan.
+- Racikan dan pemakaian bahan.
+- Penjualan, item penjualan, alokasi batch, pembayaran.
+- Shift, pergerakan kas.
+- Retur, refund, penarikan, pemusnahan.
+- Opname dan koreksi.
+- Suhu dan tindakan koreksi.
+- Utang, piutang, pembayaran, beban, jurnal jika diterapkan.
+- Lampiran, persetujuan, pengaturan, audit log.
+
+Gunakan foreign key, indeks, unique constraint, serta referensi dokumen yang konsisten. Pisahkan batch fisik dari lapisan biaya penerimaan bila satu batch diterima beberapa kali dengan harga berbeda.
+
+19. ANTARMUKA
+
+Gunakan desain bersih dan praktis:
+- Sidebar sesuai peran.
+- Kasir dengan daftar/pencarian produk dan keranjang.
+- Navigasi keyboard.
+- Tabel dengan pencarian, filter, pagination, dan ekspor.
+- Indikator status dengan teks, tidak hanya warna.
+- Form bertahap untuk penerimaan dan resep.
+- Konfirmasi tindakan dengan alasan jika diperlukan.
+- Pesan error yang jelas.
+- Tampilan tablet/mobile untuk pencatatan stok dan suhu.
+
+Jangan memuat seluruh database produk ke browser. Gunakan pencarian dan pagination server.
+
+20. PENGUJIAN WAJIB
+
+Buktikan skenario berikut:
+- Beli 2 dus, tiap dus 10 strip, tiap strip 10 tablet: saldo bertambah 200 tablet.
+- Penjualan satu strip mengurangi 10 tablet.
+- FEFO memilih batch layak dengan kedaluwarsa terdekat.
+- Batch karantina/kedaluwarsa/ditarik tidak dapat dijual.
+- Dua kasir berebut stok terakhir: hanya transaksi yang memenuhi stok berhasil.
+- Klik bayar dua kali tidak menggandakan transaksi.
+- Resep yang memerlukan validasi tidak dapat diserahkan sebelum persetujuan.
+- Racikan mengurangi stok bahan tepat sekali.
+- Refund tidak otomatis mengembalikan obat ke stok layak jual.
+- Opname menghasilkan mutasi koreksi dengan persetujuan.
+- Penutupan shift memisahkan tunai dan nontunai.
+- Pengguna tanpa izin gagal mengakses API terbatas.
+- Backup dapat dipulihkan dan saldo tetap konsisten.
+
+Gunakan data sintetis dan labeli sebagai data contoh.
+
+21. HASIL DAN URUTAN IMPLEMENTASI
+
+Hasil yang harus diserahkan:
+- Kode sumber yang dapat dijalankan.
+- Migration dan seed data contoh.
+- Petunjuk instalasi/deployment.
+- Daftar environment variable tanpa rahasia.
+- Dokumentasi alur dan hak akses.
+- Matriks regulasi dengan status verifikasi.
+- Panduan operasional, backup, dan restore.
+- Hasil pengujian serta keterbatasan yang masih ada.
+
+Kerjakan bertahap:
+1. Fondasi, login, hak akses, dan master.
+2. Pengadaan, penerimaan, batch, ledger, dan opname.
+3. Pelayanan resep, racikan, dan pengawasan khusus.
+4. Kasir, pembayaran, struk, shift, dan refund.
+5. Penarikan, pemusnahan, keuangan, dan pelaporan.
+6. Pengamanan, pengujian, dan deployment.
+
+Mulai dengan rancangan database, matriks izin, dan alur transaksi. Kemudian implementasikan setiap tahap sampai dapat diuji. Jangan menyatakan fitur selesai jika hanya berupa tombol, placeholder, atau simulasi tanpa proses backend.
